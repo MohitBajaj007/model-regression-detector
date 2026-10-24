@@ -1,0 +1,38 @@
+name: Refresh baseline
+
+# Run manually (Actions tab -> Refresh baseline -> Run workflow) after merging a
+# prompt you're happy with, or once after adding OPENAI_API_KEY to create the
+# first real-model baseline. It evaluates the active prompt on main and commits
+# baselines/baseline.<provider>.json.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    env:
+      EVAL_PROVIDER: ${{ secrets.OPENAI_API_KEY != '' && 'openai' || 'mock' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Evaluate active prompt and promote it
+        run: |
+          python -m regdetect run --no-slack --no-fail
+          python -m regdetect promote
+      - name: Commit baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add baselines/
+          git diff --cached --quiet && echo "Baseline unchanged." && exit 0
+          git commit -m "Refresh ${EVAL_PROVIDER} baseline"
+          git push

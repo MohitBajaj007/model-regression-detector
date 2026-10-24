@@ -52,7 +52,7 @@ The image defaults to `EVAL_PROVIDER=mock`. Every threshold in `config.yaml` can
 
 ### GitHub setup (one time)
 
-1. **Secrets** (Settings → Secrets and variables → Actions): `OPENAI_API_KEY`, `SLACK_WEBHOOK_URL`. Both optional. Without the key, CI uses the mock provider; without the webhook, alerts are printed to the job log.
+1. **Secrets** (Settings → Secrets and variables → Actions): `OPENAI_API_KEY`, `SLACK_WEBHOOK_URL`. Both optional. Without the key, CI uses the mock provider; without the webhook, alerts are printed to the job log. After adding the key, run **Actions → Refresh baseline → Run workflow** once to create `baselines/baseline.openai.json`.
 2. **Block merges**: Settings → Branches → add a rule for `main` → *Require status checks to pass* → select `eval`. Without this rule the check goes red but GitHub still lets you merge.
 3. **Slack webhook**: api.slack.com/apps → Create app → Incoming Webhooks → Add to channel → copy the URL into the secret.
 
@@ -66,7 +66,7 @@ The image defaults to `EVAL_PROVIDER=mock`. Every threshold in `config.yaml` can
 2. Point `active_prompt` in `config.yaml` at the new file.
 3. Run `python -m regdetect run` locally, open the report, fix what regressed.
 4. Open a PR. CI posts the result as a comment and updates it on every push.
-5. After merge, refresh the baseline: `python -m regdetect run --promote` (or `python -m regdetect promote`) and commit `baselines/baseline.<provider>.json`.
+5. After merge, refresh the baseline: run **Actions → Refresh baseline**, or locally `python -m regdetect run --promote` and commit `baselines/baseline.<provider>.json`.
 
 **Adding test cases to the golden dataset**
 
