@@ -1,0 +1,46 @@
+# Central settings for the eval pipeline.
+# Any value here can be overridden by an environment variable (see .env.example).
+
+# Which prompt file is "live". A PR that changes the prompt usually edits this line.
+active_prompt: prompts/classifier_v1.1.0.yaml
+
+# Ground-truth test cases.
+dataset: data/golden_dataset.json
+
+# Where run history and reports are written.
+db_path: results/evals.db
+reports_dir: reports
+
+# The accepted, known-good run that every new run is compared against.
+# {provider} is filled in, so mock and openai keep separate baselines
+# (comparing a mock run with a real-model run would be meaningless).
+baseline_path: baselines/baseline.{provider}.json
+
+# "openai" calls the real API. "mock" runs a free, offline, deterministic
+# stand-in so the whole pipeline works without an API key.
+provider: openai
+judge_model: gpt-4o-mini
+
+# Async batching: how many requests may be in flight at once.
+concurrency: 8
+request_timeout_s: 30
+max_retries: 2
+
+# A case "passes" when the category is right AND the summary scores >= this.
+summary_pass_score: 3
+
+thresholds:
+  # Drop in pass rate (percentage points) vs baseline.
+  warn_delta_pct: 3.0
+  critical_delta_pct: 8.0
+  # Drop in any single category's accuracy that should also raise a warning.
+  per_category_warn_pct: 10.0
+  # McNemar p-value below which flipped cases are treated as real signal.
+  significance_alpha: 0.05
+
+drift:
+  window: 7               # runs in the moving average
+  min_pass_rate: 0.85     # moving average below this -> slow-drift warning
+  max_drop_pct: 4.0       # moving average fell this much vs the previous window
+
+trend_runs: 20            # how many past runs the report's trend chart shows

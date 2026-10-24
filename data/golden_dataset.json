@@ -1,0 +1,1020 @@
+{
+  "dataset_version": "1.0.0",
+  "updated_at": "2026-10-24T22:00:00+05:30",
+  "changelog": [
+    "1.0.0 - Initial 60 cases: 16 billing, 16 technical, 16 account, 12 general, ~40% edge cases."
+  ],
+  "cases": [
+    {
+      "id": "bil-001",
+      "input": {
+        "text": "Hello, I was charged Rs 1,499 twice on 3rd October for the Pro plan. My bank statement shows both transactions. Please refund the duplicate charge."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer was charged twice for the Pro plan and wants the duplicate refunded."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "duplicate-charge"
+      ],
+      "notes": "Classic double charge, the most common billing ticket."
+    },
+    {
+      "id": "bil-002",
+      "input": {
+        "text": "Can you send me a GST invoice for my last three payments? Our finance team needs them for the quarterly filing."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer needs GST invoices for their last three payments."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "invoice"
+      ],
+      "notes": "Invoice request with no complaint attached."
+    },
+    {
+      "id": "bil-003",
+      "input": {
+        "text": "I cancelled my subscription on the 1st but you still took money on the 5th. I want that refund today."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer was charged after cancelling and wants a refund."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "refund",
+        "cancellation"
+      ],
+      "notes": "Mentions cancellation (could look like account) but the ask is money back."
+    },
+    {
+      "id": "bil-004",
+      "input": {
+        "text": "My credit card was declined when I tried to renew. The card works everywhere else. What is going on?"
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [
+          "technical"
+        ],
+        "summary": "Customer's card is being declined on renewal even though it works elsewhere."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "payment-failure"
+      ],
+      "notes": "Payment failure; a model might call this technical."
+    },
+    {
+      "id": "bil-005",
+      "input": {
+        "text": "What will it cost to move from 5 seats to 12 seats on the Team plan? Is there a discount for annual billing?"
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer wants the price for upgrading from 5 to 12 seats and asks about annual discounts."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "pricing"
+      ],
+      "notes": "Pricing question, should not fall into general."
+    },
+    {
+      "id": "bil-006",
+      "input": {
+        "text": "The coupon code DIWALI25 says it is invalid at checkout. Your email said it is valid till the 31st."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [
+          "technical"
+        ],
+        "summary": "Customer's DIWALI25 coupon is rejected at checkout despite being advertised as valid."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "coupon"
+      ],
+      "notes": "Coupon failing at checkout: billing outcome, technical symptom."
+    },
+    {
+      "id": "bil-007",
+      "input": {
+        "text": "refund pls"
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer is asking for a refund."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "very-short"
+      ],
+      "notes": "Two words. Tests that the model does not panic on tiny inputs."
+    },
+    {
+      "id": "bil-008",
+      "input": {
+        "text": "i got chargd 3 tims this mnth for the same plan wtf is happening with ur billing"
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer was charged three times this month for the same plan."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "typos",
+        "angry"
+      ],
+      "notes": "Heavy typos plus frustration. Intent is still clear."
+    },
+    {
+      "id": "bil-009",
+      "input": {
+        "text": "Wow, amazing. You raised my price by 40% with zero warning. Truly the customer-first company you claim to be. Explain this charge."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer is upset about an unannounced 40% price increase and wants an explanation."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "sarcasm"
+      ],
+      "notes": "Sarcastic tone; positive words ('amazing') must not pull it to general."
+    },
+    {
+      "id": "bil-010",
+      "input": {
+        "text": "Bhai mera payment do baar cut gaya hai, please ek refund kar do. Order ID 88231."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer was charged twice for order 88231 and wants one payment refunded."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "mixed-language",
+        "hinglish"
+      ],
+      "notes": "Hinglish. Tests multilingual robustness on a common Indian support pattern."
+    },
+    {
+      "id": "bil-011",
+      "input": {
+        "text": "Our company switched to a new card. How do I update the payment method so next month's renewal doesn't fail?"
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [
+          "account"
+        ],
+        "summary": "Customer wants to update their payment card before the next renewal."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "payment-method"
+      ],
+      "notes": "Updating payment details is account-settings-like, but it is about paying."
+    },
+    {
+      "id": "bil-012",
+      "input": {
+        "text": "Why does my invoice show 18% tax? We are a registered business outside India."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer questions the 18% tax on their invoice as a foreign registered business."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "tax"
+      ],
+      "notes": "Tax question; needs domain knowledge that tax is billing."
+    },
+    {
+      "id": "bil-013",
+      "input": {
+        "text": "The app crashed during checkout and now I see a charge but no upgrade. Please either refund or activate my plan."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [
+          "technical"
+        ],
+        "summary": "Customer was charged during a crashed checkout but did not get the upgrade."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "ambiguous",
+        "bug-caused-charge"
+      ],
+      "notes": "Crash plus charge. Prompt v1.1.0 tie-break says money wins, but technical is defensible."
+    },
+    {
+      "id": "bil-014",
+      "input": {
+        "text": "Hola, me cobraron dos veces este mes. Can you refund one of the charges please?"
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [],
+        "summary": "Customer was charged twice this month and wants one refunded."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "mixed-language",
+        "spanish"
+      ],
+      "notes": "Spanish + English code switch."
+    },
+    {
+      "id": "bil-015",
+      "input": {
+        "text": "Is there a student discount? I'm at university and the monthly price is steep for me."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [
+          "general"
+        ],
+        "summary": "Customer is asking whether a student discount is available."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "discount"
+      ],
+      "notes": "Discount enquiry; could drift to general."
+    },
+    {
+      "id": "bil-016",
+      "input": {
+        "text": "Please cancel the auto-renewal and confirm I will not be charged again next year."
+      },
+      "expected": {
+        "category": "billing",
+        "acceptable_categories": [
+          "account"
+        ],
+        "summary": "Customer wants auto-renewal cancelled and confirmation of no future charges."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "auto-renew"
+      ],
+      "notes": "Auto-renew is both an account setting and a billing control."
+    },
+    {
+      "id": "tec-001",
+      "input": {
+        "text": "The mobile app crashes every time I open the Reports tab. Android 14, app version 5.2.1."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer's Android app crashes when opening the Reports tab on version 5.2.1."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "crash"
+      ],
+      "notes": "Clean crash report with device details."
+    },
+    {
+      "id": "tec-002",
+      "input": {
+        "text": "CSV export is broken. The file downloads but it is empty, 0 KB."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer's CSV export downloads as an empty file."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "export"
+      ],
+      "notes": "Broken feature, clear technical."
+    },
+    {
+      "id": "tec-003",
+      "input": {
+        "text": "Your API is returning 502 errors on /v2/orders since about 2pm IST. Our integration is down."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer's integration is failing because the /v2/orders API returns 502 errors."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "api",
+        "outage"
+      ],
+      "notes": "API outage report from a developer customer."
+    },
+    {
+      "id": "tec-004",
+      "input": {
+        "text": "Notifications stopped working on iPhone after the last update. I miss every new message now."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer stopped receiving iPhone notifications after the latest update."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "notifications"
+      ],
+      "notes": "Post-update regression report."
+    },
+    {
+      "id": "tec-005",
+      "input": {
+        "text": "Pages take 20+ seconds to load, it's unusable. Our internet is fine, other sites are fast."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer reports pages taking over 20 seconds to load."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "performance"
+      ],
+      "notes": "Performance complaint without an explicit error message."
+    },
+    {
+      "id": "tec-006",
+      "input": {
+        "text": "sync isnt workng between my laptop and phone, changes on one dont show on the other"
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer's data is not syncing between their laptop and phone."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "typos",
+        "sync"
+      ],
+      "notes": "Typos in core keywords (workng)."
+    },
+    {
+      "id": "tec-007",
+      "input": {
+        "text": "Error 0x80041 when uploading files bigger than 10MB."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer gets error 0x80041 when uploading files over 10MB."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "error-code",
+        "short"
+      ],
+      "notes": "Short, jargon-heavy, no greeting."
+    },
+    {
+      "id": "tec-008",
+      "input": {
+        "text": "Oh great, the dashboard is blank AGAIN. Third time this week. Love paying for software that doesn't load."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer's dashboard is blank again for the third time this week."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "sarcasm"
+      ],
+      "notes": "Sarcasm mentions paying; should stay technical, not billing."
+    },
+    {
+      "id": "tec-009",
+      "input": {
+        "text": "Google Calendar integration stopped pulling events since yesterday. Reconnecting did not help."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer's Google Calendar integration stopped syncing events and reconnecting did not fix it."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "integration"
+      ],
+      "notes": "Integration failure."
+    },
+    {
+      "id": "tec-010",
+      "input": {
+        "text": "app band ho jata hai jab main photo upload karta hoon. Please fix karo."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer's app closes when they upload a photo."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "mixed-language",
+        "hinglish"
+      ],
+      "notes": "Hinglish crash report; few English keywords."
+    },
+    {
+      "id": "tec-011",
+      "input": {
+        "text": "The search bar returns no results even for invoices I can see in the list."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [
+          "billing"
+        ],
+        "summary": "Customer's search returns no results for invoices that clearly exist."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "ambiguous",
+        "keyword-trap"
+      ],
+      "notes": "Mentions invoices but the problem is broken search. Keyword trap for billing."
+    },
+    {
+      "id": "tec-012",
+      "input": {
+        "text": "2FA codes from your app are always rejected as expired, even when I enter them immediately."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [
+          "account"
+        ],
+        "summary": "Customer's 2FA codes are rejected as expired even when entered right away."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "ambiguous",
+        "2fa"
+      ],
+      "notes": "Could be account (login) or technical (time-sync bug). Both acceptable."
+    },
+    {
+      "id": "tec-013",
+      "input": {
+        "text": "broken"
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [
+          "general"
+        ],
+        "summary": "Customer reports that something is broken."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "very-short"
+      ],
+      "notes": "One word. The only sensible guess is technical."
+    },
+    {
+      "id": "tec-014",
+      "input": {
+        "text": "Dark mode makes all the chart labels invisible. Screenshot attached."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer reports chart labels are invisible in dark mode."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "ui-bug"
+      ],
+      "notes": "UI bug, no error words like crash or error."
+    },
+    {
+      "id": "tec-015",
+      "input": {
+        "text": "Webhooks are firing twice for every event, so our system creates duplicate orders."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer's webhooks fire twice per event, creating duplicate orders."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "api",
+        "keyword-trap"
+      ],
+      "notes": "'Duplicate orders' sounds like billing but it is a webhook bug."
+    },
+    {
+      "id": "tec-016",
+      "input": {
+        "text": "The page freezes when I click Save on a long form, and I lose everything I typed."
+      },
+      "expected": {
+        "category": "technical",
+        "acceptable_categories": [],
+        "summary": "Customer's page freezes on Save for long forms and their input is lost."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "freeze"
+      ],
+      "notes": "Freeze plus data loss."
+    },
+    {
+      "id": "acc-001",
+      "input": {
+        "text": "I forgot my password and the reset link has expired. Can you send a new one?"
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer needs a new password reset link because the old one expired."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "password"
+      ],
+      "notes": "Standard password reset."
+    },
+    {
+      "id": "acc-002",
+      "input": {
+        "text": "I'm locked out after too many login attempts. How long until I can try again?"
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer is locked out after failed logins and wants to know when they can retry."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "lockout"
+      ],
+      "notes": "Lockout question."
+    },
+    {
+      "id": "acc-003",
+      "input": {
+        "text": "Please change the email on my account from rohan.k@oldmail.com to rohan@newco.in."
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer wants to change their account email address."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "email-change"
+      ],
+      "notes": "Profile change request."
+    },
+    {
+      "id": "acc-004",
+      "input": {
+        "text": "How do I delete my account and all my data permanently?"
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer wants to permanently delete their account and data."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "deletion"
+      ],
+      "notes": "Deletion request; privacy-relevant."
+    },
+    {
+      "id": "acc-005",
+      "input": {
+        "text": "Need to add two new team members to our workspace and remove one who left the company."
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [
+          "billing"
+        ],
+        "summary": "Customer wants to add two team members and remove one from their workspace."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "team-members"
+      ],
+      "notes": "Seat management is account, though seats can cost money."
+    },
+    {
+      "id": "acc-006",
+      "input": {
+        "text": "cant login"
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [
+          "technical"
+        ],
+        "summary": "Customer cannot log in."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "very-short",
+        "typos"
+      ],
+      "notes": "Two words, no apostrophe. Could be read as a bug."
+    },
+    {
+      "id": "acc-007",
+      "input": {
+        "text": "i chnaged my phone and now i dont get the two factor code anymore how do i get bak in"
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer changed phones and no longer gets 2FA codes, so cannot log in."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "typos",
+        "2fa"
+      ],
+      "notes": "Typos plus 2FA recovery."
+    },
+    {
+      "id": "acc-008",
+      "input": {
+        "text": "Can I change my username? It still shows my old company name."
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer wants to change their username from their old company name."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "username"
+      ],
+      "notes": "Simple profile change."
+    },
+    {
+      "id": "acc-009",
+      "input": {
+        "text": "Fantastic, I've only requested a password reset five times and still nothing in my inbox. Brilliant system."
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer has requested a password reset five times without receiving the email."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "sarcasm"
+      ],
+      "notes": "Sarcastic praise words; intent is account recovery."
+    },
+    {
+      "id": "acc-010",
+      "input": {
+        "text": "Mera account login nahi ho raha, password bhi reset kar diya phir bhi. Help."
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer still cannot log in even after resetting their password."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "mixed-language",
+        "hinglish"
+      ],
+      "notes": "Hinglish login problem."
+    },
+    {
+      "id": "acc-011",
+      "input": {
+        "text": "Someone logged into my account from another country. I did not do this. Please secure my account."
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer reports an unknown login from another country and wants their account secured."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "security"
+      ],
+      "notes": "Security incident; must be routed fast."
+    },
+    {
+      "id": "acc-012",
+      "input": {
+        "text": "How do I transfer ownership of the workspace to my colleague before I leave the company?"
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer wants to transfer workspace ownership to a colleague."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "ownership"
+      ],
+      "notes": "Ownership transfer; less common phrasing."
+    },
+    {
+      "id": "acc-013",
+      "input": {
+        "text": "Login page says 'invalid credentials' but I'm 100% sure the password is right, I just reset it."
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [
+          "technical"
+        ],
+        "summary": "Customer gets an invalid credentials error right after resetting their password."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "ambiguous"
+      ],
+      "notes": "Error message present (technical signal) but it is an access issue."
+    },
+    {
+      "id": "acc-014",
+      "input": {
+        "text": "Bonjour, I need to update my profile name, I recently got married. Merci!"
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer wants to update their profile name after getting married."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "mixed-language",
+        "french"
+      ],
+      "notes": "French greetings around an English request."
+    },
+    {
+      "id": "acc-015",
+      "input": {
+        "text": "Please merge my two accounts, I accidentally signed up twice with different emails."
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [],
+        "summary": "Customer wants to merge two accounts created with different emails."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "merge"
+      ],
+      "notes": "Duplicate account merge."
+    },
+    {
+      "id": "acc-016",
+      "input": {
+        "text": "Can you turn off the 'remember me' setting for all users in our org? Security policy."
+      },
+      "expected": {
+        "category": "account",
+        "acceptable_categories": [
+          "general"
+        ],
+        "summary": "Customer wants 'remember me' disabled for all users in their organisation."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "settings",
+        "admin"
+      ],
+      "notes": "Org-wide account settings phrased as a policy request."
+    },
+    {
+      "id": "gen-001",
+      "input": {
+        "text": "Do you have an office in Bengaluru? I'd like to visit for a demo."
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [],
+        "summary": "Customer asks if there is a Bengaluru office to visit for a demo."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "location"
+      ],
+      "notes": "Plain general enquiry."
+    },
+    {
+      "id": "gen-002",
+      "input": {
+        "text": "Just wanted to say your support team was amazing last week. Priya solved everything in 10 minutes!"
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [],
+        "summary": "Customer is complimenting the support team for quick help."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "compliment"
+      ],
+      "notes": "Pure praise; contrast with the sarcasm cases."
+    },
+    {
+      "id": "gen-003",
+      "input": {
+        "text": "It would be great if you added a Kanban view. We'd use it every day."
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [],
+        "summary": "Customer is requesting a Kanban view feature."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "feature-request"
+      ],
+      "notes": "Feature request, not a bug."
+    },
+    {
+      "id": "gen-004",
+      "input": {
+        "text": "Are you hiring interns for the summer? I'm a CS student."
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [],
+        "summary": "Customer asks whether summer internships are available."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "careers"
+      ],
+      "notes": "Careers enquiry."
+    },
+    {
+      "id": "gen-005",
+      "input": {
+        "text": "We're a fintech startup and would love to explore a partnership or integration deal."
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [],
+        "summary": "Customer is interested in exploring a partnership with the company."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "partnership"
+      ],
+      "notes": "Mentions integration (technical keyword) but it is a business enquiry."
+    },
+    {
+      "id": "gen-006",
+      "input": {
+        "text": "What are your support hours on weekends?"
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [],
+        "summary": "Customer asks about weekend support hours."
+      },
+      "expected_difficulty": "easy",
+      "tags": [
+        "hours"
+      ],
+      "notes": "Simple information question."
+    },
+    {
+      "id": "gen-007",
+      "input": {
+        "text": "hi"
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [],
+        "summary": "Customer sent a greeting with no request."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "very-short"
+      ],
+      "notes": "No content at all. Only general makes sense."
+    },
+    {
+      "id": "gen-008",
+      "input": {
+        "text": "Do you have documentation on how the reports feature works? I couldn't find a guide."
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [
+          "technical"
+        ],
+        "summary": "Customer is looking for documentation on the reports feature."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "docs"
+      ],
+      "notes": "Docs question; 'reports' might pull toward technical."
+    },
+    {
+      "id": "gen-009",
+      "input": {
+        "text": "Kya aap log Hindi mein bhi support dete ho? Mere parents ko use karna hai."
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [],
+        "summary": "Customer asks whether support is available in Hindi for their parents."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "mixed-language",
+        "hinglish"
+      ],
+      "notes": "Hinglish general question."
+    },
+    {
+      "id": "gen-010",
+      "input": {
+        "text": "Is your product GDPR compliant? Our legal team is asking before we sign."
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [],
+        "summary": "Customer asks whether the product is GDPR compliant before signing."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "compliance"
+      ],
+      "notes": "Compliance question from a prospect."
+    },
+    {
+      "id": "gen-011",
+      "input": {
+        "text": "Yeah sure, keep sending me 4 marketing emails a day, that's totally what I signed up for."
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [
+          "account"
+        ],
+        "summary": "Customer is sarcastically complaining about receiving too many marketing emails."
+      },
+      "expected_difficulty": "hard",
+      "tags": [
+        "sarcasm",
+        "ambiguous"
+      ],
+      "notes": "Could be account (email preferences). General or account both fine."
+    },
+    {
+      "id": "gen-012",
+      "input": {
+        "text": "Can I use your product for a non-profit? We run a small NGO in Jaipur."
+      },
+      "expected": {
+        "category": "general",
+        "acceptable_categories": [
+          "billing"
+        ],
+        "summary": "Customer asks whether the product can be used by their small NGO."
+      },
+      "expected_difficulty": "medium",
+      "tags": [
+        "nonprofit"
+      ],
+      "notes": "Might drift to billing if the model assumes they want a discount."
+    }
+  ]
+}

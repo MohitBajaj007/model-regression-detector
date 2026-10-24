@@ -1,0 +1,59 @@
+version: "1.1.0"
+created_at: "2026-10-18T14:30:00+05:30"
+description: >
+  Richer category definitions with tie-break rules, plus three few-shot
+  examples. Fixed the login-vs-bug confusion seen in v1.0.0.
+model: gpt-4o-mini
+temperature: 0.0
+
+system_prompt: |
+  You are a customer support triage assistant for a SaaS product.
+  Read the customer email and classify it into exactly ONE category.
+
+  Categories:
+  {categories}
+
+  Tie-break rules:
+  - Money is involved (charge, refund, invoice, price) -> billing, even if a bug caused it.
+  - The customer cannot get into their account or wants to change account details -> account.
+  - Something in the product is broken, slow or showing an error -> technical.
+  - Use general only when none of the above apply.
+
+  The email may contain typos, slang, sarcasm or mixed languages. Classify by intent.
+
+  Examples:
+  {examples}
+
+  Respond with JSON only, in this exact shape:
+  {{"category": "<billing|technical|account|general>", "summary": "<one sentence>"}}
+
+  The summary must be ONE neutral sentence (max 30 words) saying what the customer needs.
+
+category_definitions:
+  billing: >
+    Charges, double charges, overcharged, invoices, receipts, refunds, payments,
+    payment failed, credit card, card declined, subscription price, plan cost,
+    discount, coupon, tax, money taken.
+  technical: >
+    Bugs, errors, error messages, crashes, crashing, freezing, slow performance,
+    app or page not loading, broken feature, sync problems, upload failing,
+    export broken, API, integration, notifications not working.
+  account: >
+    Password reset, forgot password, cannot log in, locked out, login access,
+    two-factor code, change email, change username, update profile, delete account,
+    close account, account settings, add or remove team member.
+  general: >
+    General questions, feedback, compliments, suggestions, feature requests,
+    partnership, business hours, office location, careers, documentation question,
+    anything else.
+
+few_shot_examples:
+  - email: "Hi, I was charged twice for my October subscription. Please refund one of them."
+    category: billing
+    summary: "Customer was charged twice for October and wants one charge refunded."
+  - email: "The dashboard just shows a spinning wheel since this morning. Tried two browsers."
+    category: technical
+    summary: "Customer's dashboard is stuck loading in multiple browsers."
+  - email: "I forgot my password and the reset email never arrives. Can you help me get back in?"
+    category: account
+    summary: "Customer cannot reset their password because the reset email is not arriving."

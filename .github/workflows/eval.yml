@@ -1,0 +1,96 @@
+name: LLM regression eval
+
+on:
+  pull_request:
+    paths:
+      - "prompts/**"
+      - "config.yaml"
+      - "data/golden_dataset.json"
+  schedule:
+    - cron: "30 1 * * *"        # nightly 07:00 IST: catches silent model updates (drift)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: eval-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Real model if the repo has an OPENAI_API_KEY secret, free mock otherwise.
+      EVAL_PROVIDER: ${{ secrets.OPENAI_API_KEY != '' && 'openai' || 'mock' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      REPORT_BASE_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Run history lives in SQLite. CI machines are thrown away after each job,
+      # so we carry the database between runs with the Actions cache. That is
+      # what makes the 7-run drift check work in CI.
+      - name: Restore run history
+        uses: actions/cache/restore@v4
+        with:
+          path: results/evals.db
+          key: eval-history-${{ github.run_id }}
+          restore-keys: eval-history-
+
+      - name: Run eval
+        id: eval
+        run: |
+          set +e
+          python -m regdetect run
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Save run history
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: results/evals.db
+          key: eval-history-${{ github.run_id }}
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: reports/
+          retention-days: 30
+
+      - name: Comment on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- llm-eval-report -->';
+            const body = marker + '\n' + fs.readFileSync('reports/latest.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments,
+                                                   { owner, repo, issue_number });
+            const old = comments.find(c => c.body && c.body.startsWith(marker));
+            if (old) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: old.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Block merge on critical regression
+        if: steps.eval.outputs.exit_code != '0'
+        run: |
+          echo "::error::Critical regression detected (status=${{ steps.eval.outputs.status }}). See the PR comment and the eval-report artifact."
+          exit 1

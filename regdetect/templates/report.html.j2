@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eval report · v{{ s.prompt_version }}</title>
+<style>
+  :root {
+    --bg: #faf7f2; --card: #ffffff; --ink: #2b2420; --muted: #7a6d64; --line: #e6ddd2;
+    --accent: #b5794a; --dark: #3a302b;
+    --pass: #2f7d4f; --warn: #b7791f; --fail: #b3412f;
+    --pass-bg: #e8f3ec; --warn-bg: #fbf1df; --fail-bg: #f8e6e2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1c1815; --card: #26211d; --ink: #efe8e1; --muted: #a8998c; --line: #3b332d;
+            --dark: #120f0d; --pass-bg: #1f3327; --warn-bg: #3a2e18; --fail-bg: #3d211b; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1, h2, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+       margin: 36px 0 12px; }
+  .rule { height: 2px; background: var(--accent); opacity: .6; margin: 12px 0 20px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .meta code { color: var(--ink); }
+  .banner { border-radius: 10px; padding: 18px 20px; margin-top: 20px; border-left: 5px solid; }
+  .banner.pass { background: var(--pass-bg); border-color: var(--pass); }
+  .banner.warn { background: var(--warn-bg); border-color: var(--warn); }
+  .banner.fail { background: var(--fail-bg); border-color: var(--fail); }
+  .banner strong { font-size: 18px; display: block; margin-bottom: 6px; }
+  .banner ul { margin: 6px 0 0; padding-left: 18px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .card .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .card .delta { font-size: 13px; font-variant-numeric: tabular-nums; }
+  .up { color: var(--pass); } .down { color: var(--fail); } .flat { color: var(--muted); }
+  .table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th { background: var(--dark); color: #fff; text-align: left; font-weight: 600; padding: 9px 12px;
+       font-family: ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: .04em; }
+  td { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+  .pill.ok { background: var(--pass-bg); color: var(--pass); }
+  .pill.bad { background: var(--fail-bg); color: var(--fail); }
+  .pill.hard { background: var(--warn-bg); color: var(--warn); }
+  .side { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .side > div { background: var(--bg); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+  .side .h { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .email { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+  .chart { width: 100%; height: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  .chart .grid { stroke: var(--line); }
+  .chart .floor { stroke: var(--fail); stroke-dasharray: 4 4; opacity: .6; }
+  .chart .line { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+  .chart .ma { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 4; }
+  .chart .dot { fill: var(--accent); }
+  .chart .axis { fill: var(--muted); font-size: 11px; font-family: ui-monospace, Menlo, monospace; }
+  .legend { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  details summary { cursor: pointer; color: var(--accent); font-weight: 600; margin: 8px 0; }
+  .empty { color: var(--muted); font-style: italic; padding: 12px 0; }
+  @media (max-width: 640px) { .side { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Model Regression Report</h1>
+  <div class="meta mono">
+    run <code>{{ s.run_id }}</code> · {{ s.created_at.strftime('%Y-%m-%d %H:%M UTC') }}
+  </div>
+  <div class="rule"></div>
+  <div class="meta">
+    Prompt <code>v{{ s.prompt_version }}</code> · model <code>{{ s.model }}</code> ·
+    dataset <code>v{{ s.dataset_version }}</code> ({{ s.total_cases }} cases) ·
+    provider <code>{{ s.provider }}</code>{% if s.git_sha %} · commit <code>{{ s.git_sha }}</code>{% endif %}
+    {% if cmp.baseline_run_id %}<br>Baseline: <code>{{ cmp.baseline_run_id }}</code> (prompt v{{ cmp.baseline_prompt_version }}){% endif %}
+  </div>
+
+  <div class="banner {{ cmp.status }}">
+    <strong>{{ icon[cmp.status] }} {{ cmp.status | upper }} — {{ cmp.headline }}</strong>
+    <ul>
+      {% for r in cmp.reasons %}<li>{{ r }}</li>{% endfor %}
+      <li>{{ drift.message }}</li>
+    </ul>
+  </div>
+
+  {% macro delta(v, unit='', invert=False, fmt='%+.1f') -%}
+    {%- set good = (v < 0) if invert else (v > 0) -%}
+    {%- set bad = (v > 0) if invert else (v < 0) -%}
+    <span class="delta {{ 'up' if good else 'down' if bad else 'flat' }}">{{ fmt | format(v) }}{{ unit }} vs baseline</span>
+  {%- endmacro %}
+
+  <h2>Scorecard</h2>
+  <div class="cards">
+    <div class="card"><div class="label">Pass rate</div><div class="value">{{ '%.1f' | format(s.pass_rate*100) }}%</div>
+      {% if baseline %}{{ delta(cmp.pass_rate_delta_pct, ' pts') }}{% endif %}</div>
+    <div class="card"><div class="label">Category accuracy</div><div class="value">{{ '%.1f' | format(s.category_accuracy*100) }}%</div>
+      {% if baseline %}{{ delta(cmp.category_accuracy_delta_pct, ' pts') }}{% endif %}</div>
+    <div class="card"><div class="label">Summary score</div><div class="value">{{ '%.2f' | format(s.avg_summary_score) }}<small>/5</small></div>
+      {% if baseline %}{{ delta(cmp.summary_score_delta, '', False, '%+.2f') }}{% endif %}</div>
+    <div class="card"><div class="label">Avg latency</div><div class="value">{{ '%.0f' | format(s.avg_latency_ms) }}<small> ms</small></div>
+      {% if baseline %}{{ delta(cmp.latency_delta_ms, ' ms', True, '%+.0f') }}{% endif %}</div>
+    <div class="card"><div class="label">Tokens</div><div class="value">{{ '{:,}'.format(s.total_tokens) }}</div>
+      {% if baseline %}<span class="delta {{ 'up' if cmp.token_delta < 0 else 'down' if cmp.token_delta > 0 else 'flat' }}">{{ '{:+,}'.format(cmp.token_delta) }} vs baseline</span>{% endif %}</div>
+    <div class="card"><div class="label">Flips</div><div class="value">{{ cmp.regressions|length }}↓ {{ cmp.improvements|length }}↑</div>
+      {% if cmp.mcnemar_p_value is not none %}<span class="delta flat">McNemar p = {{ '%.3f' | format(cmp.mcnemar_p_value) }}</span>{% endif %}</div>
+  </div>
+
+  <h2>Per-category accuracy</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Category</th>{% if baseline %}<th>Baseline</th>{% endif %}<th>This run</th>{% if baseline %}<th>Δ</th>{% endif %}</tr>
+    {% for cat, acc in s.per_category_accuracy.items() %}
+    <tr><td>{{ cat }}</td>
+      {% if baseline %}<td class="num">{{ '%.1f' | format(baseline.summary.per_category_accuracy.get(cat, 0)*100) }}%</td>{% endif %}
+      <td class="num">{{ '%.1f' | format(acc*100) }}%</td>
+      {% if baseline %}{% set d = cmp.per_category_delta_pct.get(cat, 0) %}
+      <td class="num {{ 'up' if d > 0 else 'down' if d < 0 else 'flat' }}">{{ '%+.1f' | format(d) }} pts</td>{% endif %}
+    </tr>
+    {% endfor %}
+  </table></div>
+
+  <h2>Trend (last {{ trend_n }} runs)</h2>
+  {{ chart | safe }}
+  <div class="legend">Solid = pass rate per run · dashed = moving average · red dashed = drift floor</div>
+
+  <h2>Regressions: passed before, failing now ({{ cmp.regressions|length }})</h2>
+  {% if cmp.regressions %}
+  <div class="table-wrap"><table>
+    <tr><th style="width:150px">Case</th><th>Baseline output vs this run</th></tr>
+    {% for f in cmp.regressions %}
+    <tr><td class="mono">{{ f.case_id }}<br><span class="pill hard">{{ f.difficulty }}</span><br>
+          <small>expected <b>{{ f.expected_category }}</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">{{ f.old.predicted_category.value if f.old.predicted_category else 'error' }}</span>
+          summary {{ f.old.summary_score }}/5<br>{{ f.old.predicted_summary or f.old.error }}</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill {{ 'ok' if f.new.category_correct else 'bad' }}">{{ f.new.predicted_category.value if f.new.predicted_category else 'error' }}</span>
+          summary {{ f.new.summary_score }}/5<br>{{ f.new.predicted_summary or f.new.error }}</div>
+      </div></td></tr>
+    {% endfor %}
+  </table></div>
+  {% else %}<div class="empty">No regressions. 🎉</div>{% endif %}
+
+  <h2>Improvements: failed before, passing now ({{ cmp.improvements|length }})</h2>
+  {% if cmp.improvements %}
+  <div class="table-wrap"><table>
+    <tr><th>Case</th><th>Expected</th><th>Was</th><th>Now</th></tr>
+    {% for f in cmp.improvements %}
+    <tr><td class="mono">{{ f.case_id }}</td><td>{{ f.expected_category }}</td>
+      <td>{{ f.old.predicted_category.value if f.old.predicted_category else 'error' }} ({{ f.old.summary_score }}/5)</td>
+      <td>{{ f.new.predicted_category.value if f.new.predicted_category else 'error' }} ({{ f.new.summary_score }}/5)</td></tr>
+    {% endfor %}
+  </table></div>
+  {% else %}<div class="empty">No improvements.</div>{% endif %}
+
+  <h2>All cases</h2>
+  <details><summary>Show all {{ run.cases|length }} case results</summary>
+  <div class="table-wrap"><table>
+    <tr><th>Case</th><th>Difficulty</th><th>Expected</th><th>Predicted</th><th>Summary</th><th>Latency</th><th>Result</th></tr>
+    {% for c in run.cases %}
+    <tr><td class="mono">{{ c.case_id }}</td><td>{{ c.difficulty.value }}</td><td>{{ c.expected_category.value }}</td>
+      <td>{{ c.predicted_category.value if c.predicted_category else 'error' }}</td>
+      <td class="num">{{ c.summary_score }}/5</td><td class="num">{{ '%.0f' | format(c.latency_ms) }} ms</td>
+      <td><span class="pill {{ 'ok' if c.passed else 'bad' }}">{{ 'pass' if c.passed else 'fail' }}</span></td></tr>
+    {% endfor %}
+  </table></div>
+  </details>
+</div>
+</body>
+</html>

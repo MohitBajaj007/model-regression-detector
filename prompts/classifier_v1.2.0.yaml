@@ -1,0 +1,22 @@
+version: "1.2.0"
+created_at: "2026-10-24T09:15:00+05:30"
+description: >
+  EXPERIMENT: shortened the prompt to cut tokens by ~60%. Removed few-shot
+  examples and compressed the category definitions. Kept here as the demo of
+  a change that looks harmless but should be blocked by CI.
+model: gpt-4o-mini
+temperature: 0.0
+
+system_prompt: |
+  Classify the support email.
+  Categories:
+  {categories}
+  Reply as JSON: {{"category": "...", "summary": "..."}}
+
+category_definitions:
+  billing: "Money stuff."
+  technical: "Broken things."
+  account: "Account stuff."
+  general: "Anything else."
+
+few_shot_examples: []

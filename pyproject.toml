@@ -1,0 +1,18 @@
+[project]
+name = "regdetect"
+version = "0.1.0"
+description = "CI-style regression detection for LLM-powered features"
+requires-python = ">=3.11"
+dependencies = ["openai>=1.40,<3", "pydantic>=2.6,<3", "PyYAML>=6.0", "Jinja2>=3.1"]
+
+[project.scripts]
+regdetect = "regdetect.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["regdetect*"]
+
+[tool.setuptools.package-data]
+regdetect = ["templates/*.j2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

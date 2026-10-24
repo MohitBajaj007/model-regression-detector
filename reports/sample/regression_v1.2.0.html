@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eval report · v1.2.0</title>
+<style>
+  :root {
+    --bg: #faf7f2; --card: #ffffff; --ink: #2b2420; --muted: #7a6d64; --line: #e6ddd2;
+    --accent: #b5794a; --dark: #3a302b;
+    --pass: #2f7d4f; --warn: #b7791f; --fail: #b3412f;
+    --pass-bg: #e8f3ec; --warn-bg: #fbf1df; --fail-bg: #f8e6e2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1c1815; --card: #26211d; --ink: #efe8e1; --muted: #a8998c; --line: #3b332d;
+            --dark: #120f0d; --pass-bg: #1f3327; --warn-bg: #3a2e18; --fail-bg: #3d211b; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1, h2, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+       margin: 36px 0 12px; }
+  .rule { height: 2px; background: var(--accent); opacity: .6; margin: 12px 0 20px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .meta code { color: var(--ink); }
+  .banner { border-radius: 10px; padding: 18px 20px; margin-top: 20px; border-left: 5px solid; }
+  .banner.pass { background: var(--pass-bg); border-color: var(--pass); }
+  .banner.warn { background: var(--warn-bg); border-color: var(--warn); }
+  .banner.fail { background: var(--fail-bg); border-color: var(--fail); }
+  .banner strong { font-size: 18px; display: block; margin-bottom: 6px; }
+  .banner ul { margin: 6px 0 0; padding-left: 18px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .card .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .card .delta { font-size: 13px; font-variant-numeric: tabular-nums; }
+  .up { color: var(--pass); } .down { color: var(--fail); } .flat { color: var(--muted); }
+  .table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th { background: var(--dark); color: #fff; text-align: left; font-weight: 600; padding: 9px 12px;
+       font-family: ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: .04em; }
+  td { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+  .pill.ok { background: var(--pass-bg); color: var(--pass); }
+  .pill.bad { background: var(--fail-bg); color: var(--fail); }
+  .pill.hard { background: var(--warn-bg); color: var(--warn); }
+  .side { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .side > div { background: var(--bg); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+  .side .h { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .email { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+  .chart { width: 100%; height: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  .chart .grid { stroke: var(--line); }
+  .chart .floor { stroke: var(--fail); stroke-dasharray: 4 4; opacity: .6; }
+  .chart .line { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+  .chart .ma { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 4; }
+  .chart .dot { fill: var(--accent); }
+  .chart .axis { fill: var(--muted); font-size: 11px; font-family: ui-monospace, Menlo, monospace; }
+  .legend { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  details summary { cursor: pointer; color: var(--accent); font-weight: 600; margin: 8px 0; }
+  .empty { color: var(--muted); font-style: italic; padding: 12px 0; }
+  @media (max-width: 640px) { .side { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Model Regression Report</h1>
+  <div class="meta mono">
+    run <code>20261024-183608-v1.2.0-a949</code> · 2026-10-24 18:36 UTC
+  </div>
+  <div class="rule"></div>
+  <div class="meta">
+    Prompt <code>v1.2.0</code> · model <code>gpt-4o-mini</code> ·
+    dataset <code>v1.0.0</code> (60 cases) ·
+    provider <code>mock</code>
+    <br>Baseline: <code>20261024-183608-v1.1.0-9bd8</code> (prompt v1.1.0)
+  </div>
+
+  <div class="banner fail">
+    <strong>❌ FAIL — 31 regression(s), 4 improvement(s); pass rate 78% -> 33% (-45.0 pts)</strong>
+    <ul>
+      <li>CRITICAL: pass rate dropped 45.0 pts (critical threshold 8.0).</li><li>WARNING: 'account' accuracy dropped 56.2 pts.</li><li>WARNING: 'billing' accuracy dropped 81.2 pts.</li><li>WARNING: 'technical' accuracy dropped 75.0 pts.</li><li>31 case(s) flipped pass->fail, 4 fail->pass (McNemar p=0.000, likely real).</li>
+      <li>Need 7 runs for drift detection (have 3).</li>
+    </ul>
+  </div>
+
+  
+
+  <h2>Scorecard</h2>
+  <div class="cards">
+    <div class="card"><div class="label">Pass rate</div><div class="value">33.3%</div>
+      <span class="delta down">-45.0 pts vs baseline</span></div>
+    <div class="card"><div class="label">Category accuracy</div><div class="value">36.7%</div>
+      <span class="delta down">-50.0 pts vs baseline</span></div>
+    <div class="card"><div class="label">Summary score</div><div class="value">4.43<small>/5</small></div>
+      <span class="delta flat">+0.00 vs baseline</span></div>
+    <div class="card"><div class="label">Avg latency</div><div class="value">770<small> ms</small></div>
+      <span class="delta up">-204 ms vs baseline</span></div>
+    <div class="card"><div class="label">Tokens</div><div class="value">6,123</div>
+      <span class="delta up">-30,382 vs baseline</span></div>
+    <div class="card"><div class="label">Flips</div><div class="value">31↓ 4↑</div>
+      <span class="delta flat">McNemar p = 0.000</span></div>
+  </div>
+
+  <h2>Per-category accuracy</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Category</th><th>Baseline</th><th>This run</th><th>Δ</th></tr>
+    
+    <tr><td>account</td>
+      <td class="num">93.8%</td>
+      <td class="num">37.5%</td>
+      
+      <td class="num down">-56.2 pts</td>
+    </tr>
+    
+    <tr><td>billing</td>
+      <td class="num">93.8%</td>
+      <td class="num">12.5%</td>
+      
+      <td class="num down">-81.2 pts</td>
+    </tr>
+    
+    <tr><td>general</td>
+      <td class="num">66.7%</td>
+      <td class="num">100.0%</td>
+      
+      <td class="num up">+33.3 pts</td>
+    </tr>
+    
+    <tr><td>technical</td>
+      <td class="num">87.5%</td>
+      <td class="num">12.5%</td>
+      
+      <td class="num down">-75.0 pts</td>
+    </tr>
+    
+  </table></div>
+
+  <h2>Trend (last 3 runs)</h2>
+  <svg viewBox="0 0 760 240" class="chart" role="img" aria-label="Pass rate trend over the last 3 runs"><line x1="44" x2="744" y1="206.0" y2="206.0" class="grid"/><text x="38" y="210.0" class="axis" text-anchor="end">28%</text><line x1="44" x2="744" y1="158.5" y2="158.5" class="grid"/><text x="38" y="162.5" class="axis" text-anchor="end">46%</text><line x1="44" x2="744" y1="111.0" y2="111.0" class="grid"/><text x="38" y="115.0" class="axis" text-anchor="end">64%</text><line x1="44" x2="744" y1="63.5" y2="63.5" class="grid"/><text x="38" y="67.5" class="axis" text-anchor="end">82%</text><line x1="44" x2="744" y1="16.0" y2="16.0" class="grid"/><text x="38" y="20.0" class="axis" text-anchor="end">100%</text><line x1="44" x2="744" y1="55.8" y2="55.8" class="floor"/><text x="744" y="50.8" class="axis" text-anchor="end">drift floor 85%</text><polyline points="44.0,122.0 394.0,73.4 744.0,192.7" class="line"/><circle cx="44.0" cy="122.0" r="3.5" class="dot"><title>20261024-183607-v1.0.0-c815: 60.0% (prompt v1.0.0)</title></circle><text x="44.0" y="228" class="axis" text-anchor="middle">v1.0.0</text><circle cx="394.0" cy="73.4" r="3.5" class="dot"><title>20261024-183608-v1.1.0-9bd8: 78.3% (prompt v1.1.0)</title></circle><text x="394.0" y="228" class="axis" text-anchor="middle">v1.1.0</text><circle cx="744.0" cy="192.7" r="3.5" class="dot"><title>20261024-183608-v1.2.0-a949: 33.3% (prompt v1.2.0)</title></circle><text x="744.0" y="228" class="axis" text-anchor="middle">v1.2.0</text></svg>
+  <div class="legend">Solid = pass rate per run · dashed = moving average · red dashed = drift floor</div>
+
+  <h2>Regressions: passed before, failing now (31)</h2>
+  
+  <div class="table-wrap"><table>
+    <tr><th style="width:150px">Case</th><th>Baseline output vs this run</th></tr>
+    
+    <tr><td class="mono">bil-001<br><span class="pill hard">easy</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 5/5<br>Customer writes: I was charged Rs 1,499 twice on 3rd October for the Pro plan. My bank statement shows both transactions. Please refund the duplicate charge.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: I was charged Rs 1,499 twice on 3rd October for the Pro plan. My bank statement shows both transactions. Please refund the duplicate charge.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-002<br><span class="pill hard">easy</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 5/5<br>Customer writes: Can you send me a GST invoice for my last three payments? Our finance team needs them for the quarterly filing.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Can you send me a GST invoice for my last three payments? Our finance team needs them for the quarterly filing.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-004<br><span class="pill hard">medium</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 4/5<br>Customer writes: My credit card was declined when I tried to renew. The card works everywhere else. What is going on.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 4/5<br>Customer writes: My credit card was declined when I tried to renew. The card works everywhere else. What is going on.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-005<br><span class="pill hard">easy</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 4/5<br>Customer writes: What will it cost to move from 5 seats to 12 seats on the Team plan? Is there a discount for annual billing.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 4/5<br>Customer writes: What will it cost to move from 5 seats to 12 seats on the Team plan? Is there a discount for annual billing.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-007<br><span class="pill hard">hard</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 5/5<br>Customer writes: refund pls.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: refund pls.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-008<br><span class="pill hard">medium</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 3/5<br>Customer writes: i got chargd 3 tims this mnth for the same plan wtf is happening with ur billing.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 3/5<br>Customer writes: i got chargd 3 tims this mnth for the same plan wtf is happening with ur billing.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-010<br><span class="pill hard">hard</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 5/5<br>Customer writes: Bhai mera payment do baar cut gaya hai, please ek refund kar do. Order ID 88231.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Bhai mera payment do baar cut gaya hai, please ek refund kar do. Order ID 88231.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-011<br><span class="pill hard">medium</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 5/5<br>Customer writes: Our company switched to a new card. How do I update the payment method so next month's renewal doesn't fail.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Our company switched to a new card. How do I update the payment method so next month's renewal doesn't fail.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-012<br><span class="pill hard">medium</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 5/5<br>Customer writes: Why does my invoice show 18% tax? We are a registered business outside India.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Why does my invoice show 18% tax? We are a registered business outside India.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-013<br><span class="pill hard">hard</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 5/5<br>Customer writes: The app crashed during checkout and now I see a charge but no upgrade. Please either refund or activate my plan.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: The app crashed during checkout and now I see a charge but no upgrade. Please either refund or activate my plan.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-014<br><span class="pill hard">hard</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 5/5<br>Customer writes: Hola, me cobraron dos veces este mes. Can you refund one of the charges please.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Hola, me cobraron dos veces este mes. Can you refund one of the charges please.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">bil-016<br><span class="pill hard">medium</span><br>
+          <small>expected <b>billing</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 4/5<br>Customer writes: Please cancel the auto-renewal and confirm I will not be charged again next year.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 4/5<br>Customer writes: Please cancel the auto-renewal and confirm I will not be charged again next year.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-001<br><span class="pill hard">easy</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: The mobile app crashes every time I open the Reports tab. Android 14, app version 5.2.1.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: The mobile app crashes every time I open the Reports tab. Android 14, app version 5.2.1.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-003<br><span class="pill hard">easy</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: Your API is returning 502 errors on /v2/orders since about 2pm IST. Our integration is down.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Your API is returning 502 errors on /v2/orders since about 2pm IST. Our integration is down.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-004<br><span class="pill hard">easy</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: Notifications stopped working on iPhone after the last update. I miss every new message now.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Notifications stopped working on iPhone after the last update. I miss every new message now.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-005<br><span class="pill hard">medium</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: Pages take 20+ seconds to load, it's unusable. Our internet is fine, other sites are fast.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Pages take 20+ seconds to load, it's unusable. Our internet is fine, other sites are fast.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-006<br><span class="pill hard">medium</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: sync isnt workng between my laptop and phone, changes on one dont show on the other.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: sync isnt workng between my laptop and phone, changes on one dont show on the other.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-007<br><span class="pill hard">medium</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: Error 0x80041 when uploading files bigger than 10MB.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Error 0x80041 when uploading files bigger than 10MB.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-008<br><span class="pill hard">hard</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: Oh great, the dashboard is blank AGAIN. Third time this week. Love paying for software that doesn't load.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Oh great, the dashboard is blank AGAIN. Third time this week. Love paying for software that doesn't load.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-009<br><span class="pill hard">easy</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: Google Calendar integration stopped pulling events since yesterday. Reconnecting did not help.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Google Calendar integration stopped pulling events since yesterday. Reconnecting did not help.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-010<br><span class="pill hard">hard</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: app band ho jata hai jab main photo upload karta hoon. Please fix karo.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: app band ho jata hai jab main photo upload karta hoon. Please fix karo.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-011<br><span class="pill hard">hard</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">billing</span>
+          summary 5/5<br>Customer writes: The search bar returns no results even for invoices I can see in the list.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: The search bar returns no results even for invoices I can see in the list.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-012<br><span class="pill hard">hard</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: 2FA codes from your app are always rejected as expired, even when I enter them immediately.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: 2FA codes from your app are always rejected as expired, even when I enter them immediately.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">tec-016<br><span class="pill hard">easy</span><br>
+          <small>expected <b>technical</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">technical</span>
+          summary 5/5<br>Customer writes: The page freezes when I click Save on a long form, and I lose everything I typed.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: The page freezes when I click Save on a long form, and I lose everything I typed.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">acc-001<br><span class="pill hard">easy</span><br>
+          <small>expected <b>account</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">account</span>
+          summary 5/5<br>Customer writes: I forgot my password and the reset link has expired. Can you send a new one.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: I forgot my password and the reset link has expired. Can you send a new one.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">acc-002<br><span class="pill hard">easy</span><br>
+          <small>expected <b>account</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">account</span>
+          summary 5/5<br>Customer writes: I'm locked out after too many login attempts. How long until I can try again.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: I'm locked out after too many login attempts. How long until I can try again.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">acc-005<br><span class="pill hard">medium</span><br>
+          <small>expected <b>account</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">account</span>
+          summary 5/5<br>Customer writes: Need to add two new team members to our workspace and remove one who left the company.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Need to add two new team members to our workspace and remove one who left the company.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">acc-008<br><span class="pill hard">easy</span><br>
+          <small>expected <b>account</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">account</span>
+          summary 5/5<br>Customer writes: Can I change my username? It still shows my old company name.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Can I change my username? It still shows my old company name.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">acc-009<br><span class="pill hard">hard</span><br>
+          <small>expected <b>account</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">account</span>
+          summary 5/5<br>Customer writes: Fantastic, I've only requested a password reset five times and still nothing in my inbox. Brilliant system.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Fantastic, I've only requested a password reset five times and still nothing in my inbox. Brilliant system.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">acc-013<br><span class="pill hard">hard</span><br>
+          <small>expected <b>account</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">account</span>
+          summary 5/5<br>Customer writes: Login page says 'invalid credentials' but I'm 100% sure the password is right, I just reset it.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Login page says 'invalid credentials' but I'm 100% sure the password is right, I just reset it.</div>
+      </div></td></tr>
+    
+    <tr><td class="mono">acc-014<br><span class="pill hard">medium</span><br>
+          <small>expected <b>account</b></small></td>
+      <td><div class="side">
+        <div><div class="h">Baseline (pass)</div>
+          <span class="pill ok">account</span>
+          summary 5/5<br>Customer writes: Bonjour, I need to update my profile name, I recently got married. Merci.</div>
+        <div><div class="h">This run (fail)</div>
+          <span class="pill bad">general</span>
+          summary 5/5<br>Customer writes: Bonjour, I need to update my profile name, I recently got married. Merci.</div>
+      </div></td></tr>
+    
+  </table></div>
+  
+
+  <h2>Improvements: failed before, passing now (4)</h2>
+  
+  <div class="table-wrap"><table>
+    <tr><th>Case</th><th>Expected</th><th>Was</th><th>Now</th></tr>
+    
+    <tr><td class="mono">gen-002</td><td>general</td>
+      <td>account (4/5)</td>
+      <td>general (4/5)</td></tr>
+    
+    <tr><td class="mono">gen-005</td><td>general</td>
+      <td>technical (3/5)</td>
+      <td>general (3/5)</td></tr>
+    
+    <tr><td class="mono">gen-009</td><td>general</td>
+      <td>account (5/5)</td>
+      <td>general (5/5)</td></tr>
+    
+    <tr><td class="mono">gen-010</td><td>general</td>
+      <td>account (5/5)</td>
+      <td>general (5/5)</td></tr>
+    
+  </table></div>
+  
+
+  <h2>All cases</h2>
+  <details><summary>Show all 60 case results</summary>
+  <div class="table-wrap"><table>
+    <tr><th>Case</th><th>Difficulty</th><th>Expected</th><th>Predicted</th><th>Summary</th><th>Latency</th><th>Result</th></tr>
+    
+    <tr><td class="mono">bil-001</td><td>easy</td><td>billing</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">926 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-002</td><td>easy</td><td>billing</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">931 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-003</td><td>easy</td><td>billing</td>
+      <td>billing</td>
+      <td class="num">5/5</td><td class="num">893 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">bil-004</td><td>medium</td><td>billing</td>
+      <td>general</td>
+      <td class="num">4/5</td><td class="num">883 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-005</td><td>easy</td><td>billing</td>
+      <td>general</td>
+      <td class="num">4/5</td><td class="num">887 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-006</td><td>medium</td><td>billing</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">856 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-007</td><td>hard</td><td>billing</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">592 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-008</td><td>medium</td><td>billing</td>
+      <td>general</td>
+      <td class="num">3/5</td><td class="num">721 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-009</td><td>hard</td><td>billing</td>
+      <td>general</td>
+      <td class="num">2/5</td><td class="num">870 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-010</td><td>hard</td><td>billing</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">818 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-011</td><td>medium</td><td>billing</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">828 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-012</td><td>medium</td><td>billing</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">745 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-013</td><td>hard</td><td>billing</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">941 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-014</td><td>hard</td><td>billing</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">746 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">bil-015</td><td>medium</td><td>billing</td>
+      <td>general</td>
+      <td class="num">4/5</td><td class="num">724 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">bil-016</td><td>medium</td><td>billing</td>
+      <td>general</td>
+      <td class="num">4/5</td><td class="num">748 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-001</td><td>easy</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">834 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-002</td><td>easy</td><td>technical</td>
+      <td>technical</td>
+      <td class="num">5/5</td><td class="num">809 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">tec-003</td><td>easy</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">770 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-004</td><td>easy</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">784 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-005</td><td>medium</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">858 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-006</td><td>medium</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">739 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-007</td><td>medium</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">618 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-008</td><td>hard</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">823 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-009</td><td>easy</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">899 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-010</td><td>hard</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">694 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-011</td><td>hard</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">699 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-012</td><td>hard</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">838 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-013</td><td>hard</td><td>technical</td>
+      <td>technical</td>
+      <td class="num">3/5</td><td class="num">634 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">tec-014</td><td>medium</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">652 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-015</td><td>medium</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">740 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">tec-016</td><td>easy</td><td>technical</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">859 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-001</td><td>easy</td><td>account</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">732 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-002</td><td>easy</td><td>account</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">816 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-003</td><td>easy</td><td>account</td>
+      <td>account</td>
+      <td class="num">5/5</td><td class="num">765 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">acc-004</td><td>easy</td><td>account</td>
+      <td>account</td>
+      <td class="num">5/5</td><td class="num">748 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">acc-005</td><td>medium</td><td>account</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">713 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-006</td><td>hard</td><td>account</td>
+      <td>general</td>
+      <td class="num">1/5</td><td class="num">471 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-007</td><td>medium</td><td>account</td>
+      <td>general</td>
+      <td class="num">2/5</td><td class="num">864 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-008</td><td>easy</td><td>account</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">709 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-009</td><td>hard</td><td>account</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">845 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-010</td><td>hard</td><td>account</td>
+      <td>account</td>
+      <td class="num">2/5</td><td class="num">812 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-011</td><td>medium</td><td>account</td>
+      <td>account</td>
+      <td class="num">4/5</td><td class="num">829 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">acc-012</td><td>medium</td><td>account</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">780 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-013</td><td>hard</td><td>account</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">864 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-014</td><td>medium</td><td>account</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">689 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">acc-015</td><td>medium</td><td>account</td>
+      <td>account</td>
+      <td class="num">5/5</td><td class="num">755 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">acc-016</td><td>hard</td><td>account</td>
+      <td>general</td>
+      <td class="num">4/5</td><td class="num">867 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-001</td><td>easy</td><td>general</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">655 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-002</td><td>easy</td><td>general</td>
+      <td>general</td>
+      <td class="num">4/5</td><td class="num">879 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-003</td><td>easy</td><td>general</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">766 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-004</td><td>easy</td><td>general</td>
+      <td>general</td>
+      <td class="num">3/5</td><td class="num">649 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-005</td><td>medium</td><td>general</td>
+      <td>general</td>
+      <td class="num">3/5</td><td class="num">791 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-006</td><td>easy</td><td>general</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">619 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-007</td><td>hard</td><td>general</td>
+      <td>general</td>
+      <td class="num">1/5</td><td class="num">538 ms</td>
+      <td><span class="pill bad">fail</span></td></tr>
+    
+    <tr><td class="mono">gen-008</td><td>medium</td><td>general</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">688 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-009</td><td>hard</td><td>general</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">785 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-010</td><td>medium</td><td>general</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">725 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-011</td><td>hard</td><td>general</td>
+      <td>general</td>
+      <td class="num">3/5</td><td class="num">733 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+    <tr><td class="mono">gen-012</td><td>medium</td><td>general</td>
+      <td>general</td>
+      <td class="num">5/5</td><td class="num">731 ms</td>
+      <td><span class="pill ok">pass</span></td></tr>
+    
+  </table></div>
+  </details>
+</div>
+</body>
+</html>
