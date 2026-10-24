@@ -2,7 +2,7 @@
 # Any value here can be overridden by an environment variable (see .env.example).
 
 # Which prompt file is "live". A PR that changes the prompt usually edits this line.
-active_prompt: prompts/classifier_v1.1.0.yaml
+active_prompt: prompts/classifier_v1.2.0.yaml
 
 # Ground-truth test cases.
 dataset: data/golden_dataset.json
